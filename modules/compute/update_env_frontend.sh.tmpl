@@ -1,0 +1,17 @@
+#!/bin/bash
+# Path to the .env.production file
+ENV_PRODUCTION_FILE="/home/ubuntu/app/.env.production" # Replace with the actual path to .env.production
+
+# Check if VITE_BACKEND_BASE_URL exists in the file
+if grep -q "^VITE_BACKEND_BASE_URL=" "$ENV_PRODUCTION_FILE"; then
+  # If it exists, update its value
+  sed -i "s|^VITE_BACKEND_BASE_URL=.*|VITE_BACKEND_BASE_URL=${backend_base_url}|" "$ENV_PRODUCTION_FILE"
+else
+  # If it does not exist, add it
+  echo "VITE_BACKEND_BASE_URL=${backend_base_url}" >> "$ENV_PRODUCTION_FILE"
+fi
+
+# Create a New Build
+cd /home/ubuntu/app
+
+sudo npm run build:prod
