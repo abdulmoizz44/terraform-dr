@@ -1,0 +1,37 @@
+#!/bin/bash
+# Update or add DB_HOST in the .env file
+ENV_FILE="/home/ubuntu/backend/.env"
+SERVER_TS_FILE="/home/ubuntu/backend/src/server.ts" # Replace with the actual path to server.ts
+DATABASE_FILE_PATH="/home/ubuntu/backend/src/database/Database.ts"
+
+# update .env with the new DB Hostname
+if grep -q "^DB_HOST=" "$ENV_FILE"; then
+  # If DB_HOST exists, update its value
+  sed -i "s/^DB_HOST=.*/DB_HOST=${db_host}/" "$ENV_FILE"
+else
+  # If DB_HOST does not exist, add it
+  echo "DB_HOST=${db_host}" >> "$ENV_FILE"
+fi
+
+
+# New whitelist entry
+NEW_ENTRY="http://${elb_dns_name}"
+
+# Check if the whitelist entry already exists
+if ! grep -q "$NEW_ENTRY" "$SERVER_TS_FILE"; then
+  # Add the new entry to the whitelist array
+  sed -i "/et whitelist = \[/a \    \"$NEW_ENTRY\"," "$SERVER_TS_FILE"
+fi
+
+# Database.tf file update
+if ! grep -q "ssl: {" "$DATABASE_FILE_PATH"; then
+  sed -i '/dropSchema: EnvConfig.ENV === "test",/a \  ssl: {\n    rejectUnauthorized: false, // This will ignore certificate errors (useful for testing or self-signed certs)\n  },' "$DATABASE_FILE_PATH"
+fi
+
+# Create a New Build
+cd /home/ubuntu/backend
+
+sudo npm run build
+
+pm2 restart 0
+
